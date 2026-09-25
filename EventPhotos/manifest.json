@@ -1,0 +1,44 @@
+{
+  "Event01": {
+    "title": "Jubilee Thrissur Cycling Rally",
+    "folder": "EventPhotos/Event01",
+    "photos": [
+      {
+        "file": "photo1.jpg",
+        "title": "Morning Flag-Off & Peloton Assembly",
+        "caption": "Enthusiastic cyclists gathered at the starting arch for the Jubilee Thrissur morning ride."
+      },
+      {
+        "file": "photo2.jpg",
+        "title": "Scenic Route Peloton Cruise",
+        "caption": "Riders cruising smoothly along the palm-lined coastal road under the morning golden sun."
+      },
+      {
+        "file": "photo3.jpg",
+        "title": "Finish Line Victory & Celebration",
+        "caption": "Celebrations, medals, and high spirits at the Thrissur Cycling Festival finish line."
+      }
+    ]
+  },
+  "Event02": {
+    "title": "Hindu Thrissur Cycling Expedition",
+    "folder": "EventPhotos/Event02",
+    "photos": [
+      {
+        "file": "photo1.jpg",
+        "title": "Thekkinkadu Maidan Morning Meetup",
+        "caption": "Cyclists in club jerseys gathering around Swaraj Round and ancient banyan trees at dawn."
+      },
+      {
+        "file": "photo2.jpg",
+        "title": "Thrissur Highway & Bridge Peloton",
+        "caption": "Speed peloton formation pacing across the scenic river bridge on National Highway 544."
+      },
+      {
+        "file": "photo3.jpg",
+        "title": "Post-Ride Celebration & Refreshment",
+        "caption": "Cyclists enjoying breakfast, tender coconut, and camaraderie after completing the ride."
+      }
+    ]
+  }
+}

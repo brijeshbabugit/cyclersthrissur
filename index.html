@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyclers Thrissur | Official Club Events & Rides</title>
+  <meta name="description" content="Official event calendar and ride expeditions by Cyclers Thrissur. Discover upcoming cycling rallies, route details, and event photo galleries.">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  
+  <!-- Google Fonts: Outfit (modern display) & Inter (clean UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Navigation Header -->
+  <header class="site-header" id="site-header">
+    <div class="header-container">
+      <div class="brand-area" id="brand-home-btn" role="button" tabindex="0" title="Return to Events Home">
+        <div class="logo-wrapper">
+          <img 
+            id="brand-logo" 
+            src="assets/logo_2.png" 
+            alt="Cyclers Thrissur Logo"
+            class="brand-logo"
+            onerror="this.onerror=null; this.src='https://lh3.googleusercontent.com/d/10ekMRa9pJ0jONy7Nhq9T_5Mp7912b_kC';"
+          >
+        </div>
+        <div class="brand-text">
+          <span class="club-title">CYCLERS THRISSUR</span>
+          <span class="club-tagline">EVENTS &amp; EXPEDITIONS</span>
+        </div>
+      </div>
+
+      <nav class="nav-actions">
+        <!-- Live Sheet Sync Badge -->
+        <div class="sync-status-badge" id="sync-status-badge" title="Live Google Sheet Connection Status">
+          <span class="status-dot pulsating" id="status-dot"></span>
+          <span class="status-label" id="status-label">Connecting...</span>
+        </div>
+
+        <button class="icon-btn" id="refresh-sheet-btn" title="Refresh data from Google Sheet" aria-label="Refresh Sheet Data">
+          <svg class="icon spin-target" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          <span class="btn-text">Sync Live</span>
+        </button>
+
+        <a 
+          href="https://docs.google.com/spreadsheets/d/1wmHbzg3cnkCNLcKLeZLU_IxzNZpbkxkAQ7pLu4FWBW8/edit?usp=sharing" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          class="sheet-link-btn" 
+          id="open-sheet-btn"
+          title="Open Google Sheet in new tab"
+        >
+          <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+          </svg>
+          <span>Google Sheet</span>
+          <svg class="icon-sm" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Area with SPA Views -->
+  <main class="main-wrapper" id="main-content">
+    
+    <!-- ========================================== -->
+    <!-- VIEW 1: EVENTS LISTING VIEW                -->
+    <!-- ========================================== -->
+    <div id="events-view" class="spa-view active">
+      
+      <!-- Hero Banner -->
+      <section class="hero-section">
+        <div class="hero-grid-pattern"></div>
+        <div class="hero-content">
+          <div class="hero-badge">
+            <span class="yellow-bullet"></span>
+            <span>OFFICIAL CYCLING CALENDAR</span>
+          </div>
+          <h1 class="hero-title">
+            PEDAL THE HEART OF <span class="text-yellow">THRISSUR</span>
+          </h1>
+          <p class="hero-description">
+            Explore upcoming cycling rallies, endurance rides, and club events in chronological order. 
+            Real-time synchronization powered directly by Google Drive &amp; Sheets.
+          </p>
+
+          <!-- Dynamic Statistics Bar -->
+          <div class="stats-strip" id="stats-strip">
+            <div class="stat-card">
+              <span class="stat-value text-yellow" id="stat-total-events">-</span>
+              <span class="stat-label">Listed Rides</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value text-yellow" id="stat-total-distance">-</span>
+              <span class="stat-label">Total KM</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value text-yellow" id="stat-organizers">-</span>
+              <span class="stat-label">Organizers</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-value text-yellow" id="stat-columns-active">-</span>
+              <span class="stat-label">Display Columns</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Active Display Columns Banner (from Tab DisplayColumns) -->
+      <section class="columns-indicator-bar" id="columns-indicator-bar">
+        <div class="indicator-inner">
+          <div class="indicator-header">
+            <span class="indicator-icon">📋</span>
+            <span class="indicator-title">Columns configured from <strong>DisplayColumns</strong> tab:</span>
+          </div>
+          <div class="active-columns-pills" id="active-columns-pills">
+            <!-- Dynamic pill items like [Date] [Organizer] [Distance] -->
+            <span class="pill-loading">Loading sheet settings...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Controls & Filter Toolbar -->
+      <section class="toolbar-section">
+        <div class="toolbar-container">
+          <div class="search-box">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input 
+              type="text" 
+              id="event-search-input" 
+              placeholder="Search by Organizer, Date, or Distance..." 
+              autocomplete="off"
+            >
+            <button id="clear-search-btn" class="clear-btn hidden" title="Clear Search">&times;</button>
+          </div>
+
+          <div class="controls-group">
+            <!-- Sort dropdown -->
+            <div class="select-wrapper">
+              <label for="sort-select" class="control-label">Sort:</label>
+              <select id="sort-select" class="custom-select">
+                <option value="date-asc" selected>Date: Chronological (Earliest first)</option>
+                <option value="date-desc">Date: Latest first</option>
+                <option value="dist-desc">Distance: High to Low</option>
+                <option value="org-asc">Organizer: A to Z</option>
+              </select>
+            </div>
+
+            <!-- View switch (Grid vs Table) -->
+            <div class="view-switch" role="group" aria-label="Layout view switcher">
+              <button class="view-btn active" id="view-cards-btn" title="Grid Cards View" aria-pressed="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+                </svg>
+                <span>Cards</span>
+              </button>
+              <button class="view-btn" id="view-table-btn" title="Table View" aria-pressed="false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M3 12h18M3 18h18M7 6v12M15 6v12"/>
+                </svg>
+                <span>Table</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Events Presentation Section -->
+      <section class="events-container-section">
+        
+        <!-- Loading State Skeleton -->
+        <div id="events-loading" class="events-loading-skeleton">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+
+        <!-- Error / Empty State -->
+        <div id="events-empty-state" class="empty-state hidden">
+          <div class="empty-state-icon">🚴‍♂️</div>
+          <h3 id="empty-title">No Events Found</h3>
+          <p id="empty-desc">No events match your current search filters or the sheet has no rows with List='Y'.</p>
+          <button id="reset-filters-btn" class="btn-primary">Reset Filters</button>
+        </div>
+
+        <!-- Cards View Grid Container -->
+        <div id="events-cards-grid" class="events-cards-grid">
+          <!-- Dynamically populated event cards -->
+        </div>
+
+        <!-- Table View Container -->
+        <div id="events-table-wrapper" class="events-table-wrapper hidden">
+          <table class="events-data-table" id="events-table">
+            <thead id="events-table-head">
+              <!-- Dynamically populated based on DisplayColumns tab -->
+            </thead>
+            <tbody id="events-table-body">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: DEDICATED EVENT DETAILS VIEW       -->
+    <!-- ========================================== -->
+    <div id="details-view" class="spa-view hidden">
+      
+      <!-- Back Navigation Bar -->
+      <div class="details-top-bar">
+        <button id="back-to-events-btn" class="back-nav-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          <span>Back to All Events</span>
+        </button>
+
+        <div class="details-actions">
+          <button id="share-event-btn" class="outline-action-btn" title="Copy link to this event">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>
+            </svg>
+            <span>Share Link</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Event Header Hero Card -->
+      <section class="detail-hero-card" id="detail-hero-card">
+        <div class="detail-hero-content">
+          <div class="detail-badge-group">
+            <span class="detail-sno-tag" id="detail-sno-tag">EVENT #01</span>
+            <span class="status-pill active-pill">LISTED EVENT</span>
+          </div>
+
+          <h2 class="detail-event-title" id="detail-event-title">Event Title</h2>
+          <p class="detail-event-subtitle" id="detail-event-subtitle">Organized by Jubilee Thrissur</p>
+
+          <!-- Highlight Metrics Strip -->
+          <div class="detail-key-metrics" id="detail-key-metrics">
+            <!-- Dynamic fields: Date, Distance, Organizer, etc. -->
+          </div>
+        </div>
+
+        <div class="detail-folder-meta">
+          <div class="folder-meta-label">Photo Source Folder:</div>
+          <div class="folder-path-chip" id="detail-folder-chip">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span id="detail-folder-path">EventPhotos\Event01</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Event Information Breakdown (Display vs Full) -->
+      <section class="detail-specs-section">
+        <div class="specs-card">
+          <h3 class="section-title">
+            <span class="title-accent"></span>
+            Event Specifications
+          </h3>
+          <div class="specs-grid" id="specs-grid">
+            <!-- Dynamically populated with all columns: Date, Distance, Organizer, Contribution, Contact Person, etc. -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Photo Gallery Section -->
+      <section class="gallery-section" id="gallery-section">
+        <div class="gallery-header">
+          <div class="gallery-title-box">
+            <h3 class="section-title">
+              <span class="title-accent"></span>
+              Event Photo Gallery
+            </h3>
+            <p class="gallery-desc">
+              Captured moments and ride highlights loaded from 
+              <code class="folder-code" id="gallery-folder-code">EventPhotos\Event01</code>
+            </p>
+          </div>
+          
+          <div class="gallery-meta-count">
+            <span class="photo-counter-badge" id="photo-count-badge">3 Photos</span>
+          </div>
+        </div>
+
+        <!-- Gallery Grid -->
+        <div class="gallery-grid" id="gallery-grid">
+          <!-- Populated dynamically with event photos -->
+        </div>
+
+        <!-- Local Photo Loader / Dropzone Feature -->
+        <div class="photo-dropzone-box" id="photo-dropzone-box">
+          <div class="dropzone-content">
+            <svg class="dropzone-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <div class="dropzone-text">
+              <strong>Need to preview more local photos for this event?</strong>
+              <span>Select or drop additional photos from your local <code>EventPhotos</code> folder to preview them instantly in this gallery.</span>
+            </div>
+            <label class="dropzone-file-btn">
+              Browse Photos
+              <input type="file" id="local-photo-input" multiple accept="image/*" class="sr-only">
+            </label>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- FULLSCREEN LIGHTBOX MODAL                  -->
+  <!-- ========================================== -->
+  <div id="lightbox-modal" class="lightbox-modal hidden" role="dialog" aria-modal="true" aria-label="Photo Lightbox">
+    <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+    
+    <div class="lightbox-container">
+      <div class="lightbox-top-bar">
+        <div class="lightbox-info">
+          <span class="lightbox-title" id="lightbox-title">Photo Title</span>
+          <span class="lightbox-counter" id="lightbox-counter">1 / 3</span>
+        </div>
+        
+        <div class="lightbox-controls">
+          <button class="lightbox-btn" id="lightbox-download-btn" title="Download Image">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+          </button>
+          <button class="lightbox-btn" id="lightbox-close-btn" title="Close (Esc)" aria-label="Close Lightbox">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="lightbox-main-view">
+        <button class="lightbox-nav-btn prev-btn" id="lightbox-prev-btn" title="Previous Photo (Left Arrow)" aria-label="Previous Photo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+
+        <div class="lightbox-image-stage" id="lightbox-stage">
+          <img id="lightbox-current-img" src="" alt="Event Photograph" class="lightbox-img">
+        </div>
+
+        <button class="lightbox-nav-btn next-btn" id="lightbox-next-btn" title="Next Photo (Right Arrow)" aria-label="Next Photo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="lightbox-caption-bar" id="lightbox-caption-bar">
+        <p id="lightbox-caption">Photo description...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <img 
+          src="assets/logo_2.png" 
+          alt="Cyclers Thrissur" 
+          class="footer-logo"
+          onerror="this.onerror=null; this.src='https://lh3.googleusercontent.com/d/10ekMRa9pJ0jONy7Nhq9T_5Mp7912b_kC';"
+        >
+        <div>
+          <span class="footer-brand">CYCLERS THRISSUR</span>
+          <p class="footer-sub">Building camaraderie, endurance, and green transport across Kerala.</p>
+        </div>
+      </div>
+
+      <div class="footer-right">
+        <span class="footer-meta">Auto-synced with Google Drive &amp; Sheets</span>
+        <span class="footer-copy">&copy; 2026 Cyclers Thrissur. All Rights Reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Main Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
