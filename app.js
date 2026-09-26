@@ -18,8 +18,7 @@
   const STORAGE_KEY_SCRIPT_URL = 'cyclers_thrissur_drive_script_url';
   
   // Default Google Apps Script Web App URL for Google Drive photo sync
-  // (Paste your deployed Web App URL here or configure it in the in-app "Drive Photos" modal)
-  const DEFAULT_APPS_SCRIPT_URL = '';
+  const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1sK4_eGpWfDEhzkMkUcQFZzxax8AF8tiYO0tG8GOs60HHkOzvpMql7MWeQZC61qL-eQ/exec';
 
   // Verified Fallback Data (ensures 100% offline availability and instant preview)
   const FALLBACK_EVENTS = [
