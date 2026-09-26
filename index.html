@@ -41,11 +41,19 @@
           <span class="status-label" id="status-label">Connecting...</span>
         </div>
 
-        <button class="icon-btn" id="refresh-sheet-btn" title="Refresh data from Google Sheet" aria-label="Refresh Sheet Data">
+        <button class="icon-btn" id="refresh-sheet-btn" title="Refresh data from Google Sheet & Drive" aria-label="Refresh Sheet Data">
           <svg class="icon spin-target" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
           </svg>
           <span class="btn-text">Sync Live</span>
+        </button>
+
+        <button class="icon-btn drive-btn" id="drive-settings-btn" title="Configure Google Drive Photo Folders (EventList > EventPhotos > Event01)" aria-label="Google Drive Photos Sync">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span class="btn-text">Drive Photos</span>
+          <span class="drive-sync-dot" id="drive-sync-dot" title="Drive sync status"></span>
         </button>
 
         <a 
@@ -254,13 +262,19 @@
         </div>
 
         <div class="detail-folder-meta">
-          <div class="folder-meta-label">Photo Source Folder:</div>
+          <div class="folder-meta-label">Photo Storage Location:</div>
           <div class="folder-path-chip" id="detail-folder-chip">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
-            <span id="detail-folder-path">EventPhotos\Event01</span>
+            <span id="detail-folder-path">Google Drive: EventList &gt; EventPhotos &gt; Event01</span>
           </div>
+          <a href="#" target="_blank" rel="noopener noreferrer" class="drive-folder-link hidden" id="detail-drive-folder-link" title="Open this folder in Google Drive">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+            </svg>
+            <span>Open in Google Drive</span>
+          </a>
         </div>
       </section>
 
@@ -281,18 +295,26 @@
       <section class="gallery-section" id="gallery-section">
         <div class="gallery-header">
           <div class="gallery-title-box">
-            <h3 class="section-title">
-              <span class="title-accent"></span>
-              Event Photo Gallery
-            </h3>
+            <div class="gallery-title-row">
+              <h3 class="section-title">
+                <span class="title-accent"></span>
+                Event Photo Gallery
+              </h3>
+              <span class="drive-source-badge" id="gallery-source-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span id="gallery-source-label">Google Drive Live</span>
+              </span>
+            </div>
             <p class="gallery-desc">
-              Captured moments and ride highlights loaded from 
-              <code class="folder-code" id="gallery-folder-code">EventPhotos\Event01</code>
+              Synchronized from Google Drive folder: 
+              <code class="folder-code" id="gallery-folder-code">EventList &gt; EventPhotos &gt; Event01</code>
             </p>
           </div>
           
           <div class="gallery-meta-count">
-            <span class="photo-counter-badge" id="photo-count-badge">3 Photos</span>
+            <span class="photo-counter-badge" id="photo-count-badge">0 Photos</span>
           </div>
         </div>
 
@@ -308,13 +330,21 @@
               <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
             </svg>
             <div class="dropzone-text">
-              <strong>Need to preview more local photos for this event?</strong>
-              <span>Select or drop additional photos from your local <code>EventPhotos</code> folder to preview them instantly in this gallery.</span>
+              <strong>Need to add or preview extra photos?</strong>
+              <span>Drop photos here or configure live syncing from your Google Drive folder <code>EventList &gt; EventPhotos &gt; Event01</code>.</span>
             </div>
-            <label class="dropzone-file-btn">
-              Browse Photos
-              <input type="file" id="local-photo-input" multiple accept="image/*" class="sr-only">
-            </label>
+            <div class="dropzone-actions">
+              <button type="button" class="btn-secondary-sm" id="open-drive-guide-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span>Drive Sync Setup</span>
+              </button>
+              <label class="dropzone-file-btn">
+                Browse Files
+                <input type="file" id="local-photo-input" multiple accept="image/*" class="sr-only">
+              </label>
+            </div>
           </div>
         </div>
       </section>
@@ -337,6 +367,11 @@
         </div>
         
         <div class="lightbox-controls">
+          <a href="#" target="_blank" rel="noopener noreferrer" class="lightbox-btn hidden" id="lightbox-drive-link-btn" title="Open original in Google Drive">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+            </svg>
+          </a>
           <button class="lightbox-btn" id="lightbox-download-btn" title="Download Image">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
@@ -371,6 +406,150 @@
 
       <div class="lightbox-caption-bar" id="lightbox-caption-bar">
         <p id="lightbox-caption">Photo description...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- GOOGLE DRIVE PHOTO SYNC MODAL              -->
+  <!-- ========================================== -->
+  <div id="drive-modal" class="drive-modal hidden" role="dialog" aria-modal="true" aria-label="Google Drive Sync Settings">
+    <div class="drive-modal-backdrop" id="drive-modal-backdrop"></div>
+    <div class="drive-modal-card">
+      <div class="drive-modal-header">
+        <div class="drive-modal-title-group">
+          <div class="drive-modal-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div>
+            <h3 class="drive-modal-title">Google Drive Photo Synchronization</h3>
+            <p class="drive-modal-sub">Fetch event photos live from your Google Drive folder hierarchy</p>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="drive-modal-close-btn" title="Close modal">&times;</button>
+      </div>
+
+      <div class="drive-modal-body">
+        <!-- Hierarchy Diagram -->
+        <div class="drive-hierarchy-box">
+          <div class="hierarchy-title">Expected Google Drive Folder Structure:</div>
+          <div class="hierarchy-tree">
+            <div class="tree-node root">
+              <span class="folder-emoji">📁</span>
+              <span class="node-name">Google Drive</span>
+            </div>
+            <div class="tree-branch">
+              <div class="tree-node level-1">
+                <span class="folder-emoji">📁</span>
+                <span class="node-name highlight">EventList</span>
+                <span class="node-badge">Root Folder</span>
+              </div>
+              <div class="tree-subbranch">
+                <div class="tree-node level-2">
+                  <span class="folder-emoji">📁</span>
+                  <span class="node-name highlight">EventPhotos</span>
+                  <span class="node-badge">Photos Parent</span>
+                </div>
+                <div class="tree-subsubbranch">
+                  <div class="tree-node level-3">
+                    <span class="folder-emoji">📁</span>
+                    <span class="node-name">Event01</span>
+                    <span class="node-desc">(Photos for S.No 1)</span>
+                  </div>
+                  <div class="tree-node level-3">
+                    <span class="folder-emoji">📁</span>
+                    <span class="node-name">Event02</span>
+                    <span class="node-desc">(Photos for S.No 2)</span>
+                  </div>
+                  <div class="tree-node level-3">
+                    <span class="folder-emoji">📁</span>
+                    <span class="node-name">Event{NN}</span>
+                    <span class="node-desc">(Event Serial Number padded)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connection Settings -->
+        <div class="drive-config-section">
+          <label for="apps-script-input" class="config-label">
+            <span>Google Apps Script Web App URL:</span>
+            <span class="config-status-badge" id="drive-conn-status">Checking...</span>
+          </label>
+          <div class="config-input-group">
+            <input 
+              type="url" 
+              id="apps-script-input" 
+              class="config-input" 
+              placeholder="https://script.google.com/macros/s/.../exec"
+              spellcheck="false"
+            >
+            <button type="button" class="btn-primary" id="save-test-drive-btn">
+              <span>Save &amp; Test Live</span>
+            </button>
+          </div>
+          <p class="config-hint">
+            The free Google Apps Script web app reads photos directly from <code>EventList &gt; EventPhotos &gt; Event01, Event02...</code>
+          </p>
+        </div>
+
+        <!-- Optional: Root Folder ID/Link override -->
+        <div class="drive-config-section">
+          <label for="drive-folder-id-input" class="config-label">
+            <span>Google Drive Folder Link / ID (Optional override):</span>
+          </label>
+          <div class="config-input-group">
+            <input 
+              type="text" 
+              id="drive-folder-id-input" 
+              class="config-input" 
+              placeholder="Paste Google Drive link for EventList or EventPhotos folder"
+              spellcheck="false"
+            >
+          </div>
+          <p class="config-hint">
+            If your folder has a custom location, paste the folder share link here.
+          </p>
+        </div>
+
+        <!-- Live Diagnostic Results Box -->
+        <div class="drive-diagnostic-box hidden" id="drive-diagnostic-box">
+          <div class="diagnostic-header">
+            <span class="diagnostic-title">Connection Diagnostic Results</span>
+            <span class="diagnostic-badge" id="diagnostic-badge">Status</span>
+          </div>
+          <div class="diagnostic-output" id="diagnostic-output">
+            <!-- Populated dynamically with diagnostic details -->
+          </div>
+        </div>
+
+        <!-- Quick 3-step Instructions accordion -->
+        <div class="drive-steps-card">
+          <div class="steps-heading">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <span>How to enable Google Drive Live Sync:</span>
+          </div>
+          <ol class="steps-list">
+            <li>
+              In your Google Sheet, click <strong>Extensions &gt; Apps Script</strong> (or open <code>google_apps_script.js</code> from this project).
+            </li>
+            <li>
+              Paste the code from <code class="inline-code">google_apps_script.js</code> and click <strong>Deploy &gt; New deployment &gt; Web app</strong>.
+            </li>
+            <li>
+              Set <em>Who has access</em> to <strong>"Anyone"</strong>, deploy, copy the Web App URL, and paste it into the field above!
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="drive-modal-footer">
+        <button type="button" class="btn-ghost" id="reset-drive-default-btn">Reset to Default</button>
+        <button type="button" class="btn-primary" id="close-drive-modal-btn">Done</button>
       </div>
     </div>
   </div>
