@@ -16,6 +16,10 @@
   const DISPLAY_SHEET_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=DisplayColumns`;
   const MANIFEST_URL = 'EventPhotos/manifest.json';
   const STORAGE_KEY_SCRIPT_URL = 'cyclers_thrissur_drive_script_url';
+  
+  // Default Google Apps Script Web App URL for Google Drive photo sync
+  // (Paste your deployed Web App URL here or configure it in the in-app "Drive Photos" modal)
+  const DEFAULT_APPS_SCRIPT_URL = '';
 
   // Verified Fallback Data (ensures 100% offline availability and instant preview)
   const FALLBACK_EVENTS = [
@@ -105,7 +109,7 @@
     photoManifest: DEFAULT_PHOTO_MANIFEST,
     drivePhotosByEvent: {}, // Stores photos fetched from Google Drive per event key (e.g. 'Event01')
     driveFolderUrls: {},    // Stores Drive folder links per event
-    appsScriptUrl: localStorage.getItem(STORAGE_KEY_SCRIPT_URL) || '',
+    appsScriptUrl: localStorage.getItem(STORAGE_KEY_SCRIPT_URL) || DEFAULT_APPS_SCRIPT_URL || '',
     currentDetailEvent: null,
     currentDetailPhotos: [],
     currentDetailSource: 'local', // 'drive' | 'manifest' | 'local'
@@ -347,7 +351,7 @@
    * Fetch live photo listings from Google Drive via Google Apps Script Web App
    */
   async function syncGoogleDrivePhotos() {
-    const scriptUrl = state.appsScriptUrl || localStorage.getItem(STORAGE_KEY_SCRIPT_URL);
+    const scriptUrl = state.appsScriptUrl || localStorage.getItem(STORAGE_KEY_SCRIPT_URL) || DEFAULT_APPS_SCRIPT_URL;
     const customFolderId = state.driveFolderId || localStorage.getItem(STORAGE_KEY_FOLDER_ID) || '';
 
     if (!scriptUrl) {
