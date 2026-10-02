@@ -35,7 +35,7 @@
 // OPTIONAL CONFIGURATION:
 // Leave empty ("") to automatically search Drive for 'EventList' or 'EventPhotos'.
 // Or paste your Google Drive Folder ID or URL here:
-var CUSTOM_FOLDER_ID = ""; // e.g. "1a2b3c4d5e6f..." or folder URL
+var CUSTOM_FOLDER_ID = "1mVLjbb4YeSwWGOC--yr8PgXGMwvfWZu3"; // Default folder: https://drive.google.com/drive/folders/1mVLjbb4YeSwWGOC--yr8PgXGMwvfWZu3
 
 /**
  * Handle HTTP GET requests from web application

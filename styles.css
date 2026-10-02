@@ -1182,15 +1182,86 @@ body {
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), var(--shadow-yellow);
 }
 
+.photo-img-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #111317;
+}
+
+.photo-skeleton-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #13161c 0%, #1f2430 50%, #13161c 100%);
+  background-size: 200% 100%;
+  animation: photoShimmer 1.6s infinite ease-in-out;
+  z-index: 1;
+}
+
+@keyframes photoShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .photo-thumb {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  position: relative;
+  z-index: 2;
+  opacity: 0.95;
 }
 
 .photo-card:hover .photo-thumb {
   transform: scale(1.08);
+}
+
+.photo-error-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+  background: #13161d;
+  color: var(--yellow-primary);
+  gap: 0.6rem;
+  z-index: 2;
+}
+
+.photo-error-title {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  max-width: 85%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drive-link-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--yellow-subtle);
+  color: var(--yellow-primary);
+  border: 1px solid var(--yellow-border);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.drive-link-chip:hover {
+  background: var(--yellow-primary);
+  color: #000;
 }
 
 .photo-info-overlay {

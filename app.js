@@ -16,9 +16,11 @@
   const DISPLAY_SHEET_URL = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=DisplayColumns`;
   const MANIFEST_URL = 'EventPhotos/manifest.json';
   const STORAGE_KEY_SCRIPT_URL = 'cyclers_thrissur_drive_script_url';
+  const STORAGE_KEY_FOLDER_ID = 'cyclers_thrissur_drive_folder_id';
   
   // Default Google Apps Script Web App URL for Google Drive photo sync
   const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1sK4_eGpWfDEhzkMkUcQFZzxax8AF8tiYO0tG8GOs60HHkOzvpMql7MWeQZC61qL-eQ/exec';
+  const DEFAULT_DRIVE_FOLDER_ID = '1mVLjbb4YeSwWGOC--yr8PgXGMwvfWZu3';
 
   // Verified Fallback Data (ensures 100% offline availability and instant preview)
   const FALLBACK_EVENTS = [
@@ -109,6 +111,7 @@
     drivePhotosByEvent: {}, // Stores photos fetched from Google Drive per event key (e.g. 'Event01')
     driveFolderUrls: {},    // Stores Drive folder links per event
     appsScriptUrl: localStorage.getItem(STORAGE_KEY_SCRIPT_URL) || DEFAULT_APPS_SCRIPT_URL || '',
+    driveFolderId: localStorage.getItem(STORAGE_KEY_FOLDER_ID) || DEFAULT_DRIVE_FOLDER_ID || '',
     currentDetailEvent: null,
     currentDetailPhotos: [],
     currentDetailSource: 'local', // 'drive' | 'manifest' | 'local'
@@ -211,12 +214,59 @@
 
   /**
    * Normalize an event serial number or folder key to "Event01", "Event02", etc.
+   * Handles inputs like "1", "01", "Event1", "Event01", "Even01", "Event 01", etc.
    */
-  function formatFolderKey(sNo) {
-    if (!sNo) return 'Event01';
-    const num = parseInt(sNo, 10);
-    const pad = isNaN(num) ? String(sNo).padStart(2, '0') : (num < 10 ? `0${num}` : String(num));
-    return `Event${pad}`;
+  function formatFolderKey(input) {
+    if (!input) return 'Event01';
+    const str = String(input).trim();
+    const numMatch = str.match(/\d+/);
+    if (numMatch) {
+      const num = parseInt(numMatch[0], 10);
+      return `Event${num < 10 ? `0${num}` : num}`;
+    }
+    return str.startsWith('Event') ? str : `Event${str}`;
+  }
+
+  /**
+   * Extract clean folder ID if full Google Drive URL is provided
+   */
+  function cleanFolderId(idOrUrl) {
+    if (!idOrUrl) return '';
+    const str = String(idOrUrl).trim();
+    const match = str.match(/folders\/([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) return match[1];
+    const idMatch = str.match(/id=([a-zA-Z0-9_-]+)/);
+    if (idMatch && idMatch[1]) return idMatch[1];
+    return str;
+  }
+
+  /**
+   * Extract clean file ID from any Google Drive link or string
+   */
+  function cleanDriveFileId(str) {
+    if (!str) return '';
+    const s = String(str).trim();
+    const matchD = s.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (matchD && matchD[1]) return matchD[1];
+    const matchId = s.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (matchId && matchId[1]) return matchId[1];
+    return s;
+  }
+
+  /**
+   * Build multi-tier Google Drive image URL fallbacks
+   */
+  function buildDriveImageCandidates(fileId) {
+    if (!fileId) return [];
+    return [
+      `https://lh3.googleusercontent.com/d/${fileId}`,
+      `https://drive.google.com/thumbnail?id=${fileId}&sz=w1600`,
+      `https://drive.google.com/thumbnail?id=${fileId}&sz=w800`,
+      `https://drive.google.com/thumbnail?id=${fileId}&sz=w600`,
+      `https://drive.usercontent.google.com/download?id=${fileId}&export=view&authuser=0`,
+      `https://drive.google.com/uc?export=view&id=${fileId}`,
+      `https://drive.google.com/uc?id=${fileId}`
+    ];
   }
 
   /**
@@ -344,19 +394,17 @@
   // Hierarchy: Google Drive > EventList > EventPhotos > Event01, Event02, ...
   // ==========================================================================
 
-  const STORAGE_KEY_FOLDER_ID = 'cyclers_thrissur_drive_folder_id';
-
   /**
    * Fetch live photo listings from Google Drive via Google Apps Script Web App
    */
   async function syncGoogleDrivePhotos() {
     const scriptUrl = state.appsScriptUrl || localStorage.getItem(STORAGE_KEY_SCRIPT_URL) || DEFAULT_APPS_SCRIPT_URL;
-    const customFolderId = state.driveFolderId || localStorage.getItem(STORAGE_KEY_FOLDER_ID) || '';
+    const rawFolderId = state.driveFolderId || localStorage.getItem(STORAGE_KEY_FOLDER_ID) || DEFAULT_DRIVE_FOLDER_ID;
+    const customFolderId = cleanFolderId(rawFolderId);
 
     if (!scriptUrl) {
-      // No custom Google Apps Script Web App configured yet
       state.isDriveLiveConnected = false;
-      updateDriveStatusUI(false, 'Local Manifest Mode');
+      updateDriveStatusUI(false, 'Drive Sync Offline');
       return false;
     }
 
@@ -386,14 +434,23 @@
           }
 
           if (eventInfo.photos && Array.isArray(eventInfo.photos)) {
-            state.drivePhotosByEvent[normalizedKey] = eventInfo.photos.map(p => ({
-              url: p.url || p.thumbnailUrl || `https://lh3.googleusercontent.com/d/${p.id}`,
-              thumbnailUrl: p.cardThumbnailUrl || p.thumbnailUrl || `https://drive.google.com/thumbnail?id=${p.id}&sz=w600`,
-              title: p.title || p.name || `Photo - ${normalizedKey}`,
-              caption: p.caption || p.description || `Google Drive photo: ${p.name}`,
-              driveUrl: p.driveUrl || `https://drive.google.com/file/d/${p.id}/view`,
-              source: 'Google Drive'
-            }));
+            state.drivePhotosByEvent[normalizedKey] = eventInfo.photos.map(p => {
+              const fileId = p.id || cleanDriveFileId(p.url || p.driveUrl || '');
+              const candidates = buildDriveImageCandidates(fileId);
+
+              return {
+                id: fileId,
+                name: p.name || `photo_${fileId}`,
+                url: p.url || (candidates.length > 0 ? candidates[0] : ''),
+                thumbnailUrl: p.cardThumbnailUrl || p.thumbnailUrl || (candidates.length > 1 ? candidates[1] : candidates[0]),
+                cardThumbnailUrl: p.cardThumbnailUrl || p.thumbnailUrl || (candidates.length > 2 ? candidates[2] : candidates[0]),
+                fallbackUrls: candidates,
+                title: p.title || p.name || `Photo - ${normalizedKey}`,
+                caption: p.caption || p.description || `Google Drive photo: ${p.name || ''}`,
+                driveUrl: p.driveUrl || (fileId ? `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk` : ''),
+                source: 'Google Drive'
+              };
+            });
           }
         });
 
@@ -406,7 +463,7 @@
     } catch (err) {
       console.warn('Google Drive photo sync notice:', err.message);
       state.isDriveLiveConnected = false;
-      updateDriveStatusUI(false, 'Drive Sync Inactive (Using Local)');
+      updateDriveStatusUI(false, 'Drive Sync Inactive');
       return false;
     }
   }
@@ -423,41 +480,36 @@
   }
 
   /**
-   * Resolves list of photos for an event, prioritizing Google Drive -> Manifest -> Local Probe
+   * Resolves list of photos for an event, picking photos directly from Google Drive subfolders (Event01, Event02, etc.)
    */
   function getEventPhotos(sNo) {
     const folderKey = formatFolderKey(sNo);
     let photosList = [];
-    let source = 'local';
+    let source = 'drive';
 
-    // 1. Check Google Drive live synchronized photos
+    // 1. Check Google Drive live synchronized photos for this event subfolder
     if (state.drivePhotosByEvent[folderKey] && state.drivePhotosByEvent[folderKey].length > 0) {
       photosList = state.drivePhotosByEvent[folderKey].map(p => ({ ...p }));
       source = 'drive';
-    } 
-    // 2. Check Photo Manifest
-    else if (state.photoManifest[folderKey] && state.photoManifest[folderKey].photos && state.photoManifest[folderKey].photos.length > 0) {
-      const manifestItem = state.photoManifest[folderKey];
-      photosList = manifestItem.photos.map(p => ({
-        url: `${manifestItem.folder}/${p.file}`,
-        thumbnailUrl: `${manifestItem.folder}/${p.file}`,
-        title: p.title || `Photo - Event ${sNo}`,
-        caption: p.caption || `Captured during the ${state.currentDetailEvent ? state.currentDetailEvent.Organizer : ''} cycling expedition.`,
-        source: 'manifest'
+    } else if (state.photoManifest && state.photoManifest[folderKey] && state.photoManifest[folderKey].photos) {
+      // 2. Local verified manifest fallback if Drive has no photos or is offline
+      const mf = state.photoManifest[folderKey];
+      photosList = mf.photos.map(p => ({
+        url: `${mf.folder}/${p.file}`,
+        thumbnailUrl: `${mf.folder}/${p.file}`,
+        cardThumbnailUrl: `${mf.folder}/${p.file}`,
+        fallbackUrls: [`${mf.folder}/${p.file}`],
+        title: p.title || 'Event Photograph',
+        caption: p.caption || '',
+        source: 'Local Manifest'
       }));
       source = 'manifest';
-    } 
-    // 3. Fallback probes
-    else {
-      photosList = [
-        { url: `EventPhotos/${folderKey}/photo1.jpg`, thumbnailUrl: `EventPhotos/${folderKey}/photo1.jpg`, title: 'Event Assembly & Start', caption: 'Flag-off moments in Thrissur', source: 'local' },
-        { url: `EventPhotos/${folderKey}/photo2.jpg`, thumbnailUrl: `EventPhotos/${folderKey}/photo2.jpg`, title: 'Peloton On Route', caption: 'Riders pacing through scenic route', source: 'local' },
-        { url: `EventPhotos/${folderKey}/photo3.jpg`, thumbnailUrl: `EventPhotos/${folderKey}/photo3.jpg`, title: 'Celebration & Finish', caption: 'Finish line celebration and refreshments', source: 'local' }
-      ];
-      source = 'local';
+    } else {
+      photosList = [];
+      source = 'drive';
     }
 
-    // 4. Merge any user-added local preview photos
+    // 3. Merge any runtime user-added local preview photos
     if (state.userCustomPhotos[sNo]) {
       photosList = [...photosList, ...state.userCustomPhotos[sNo]];
     }
@@ -466,25 +518,25 @@
   }
 
   /**
-   * Helper to retrieve card thumbnail photo
+   * Helper to retrieve card thumbnail photo directly from Google Drive
    */
   function getEventThumbnail(sNo) {
     const folderKey = formatFolderKey(sNo);
     
-    // 1. Google Drive thumbnail
+    // 1. Google Drive thumbnail from event subfolder (e.g. Event01)
     if (state.drivePhotosByEvent[folderKey] && state.drivePhotosByEvent[folderKey].length > 0) {
       const firstPhoto = state.drivePhotosByEvent[folderKey][0];
-      return firstPhoto.thumbnailUrl || firstPhoto.url;
+      return firstPhoto.cardThumbnailUrl || firstPhoto.thumbnailUrl || firstPhoto.url;
     }
 
-    // 2. Manifest thumbnail
-    const manifestItem = state.photoManifest[folderKey];
-    if (manifestItem && manifestItem.photos && manifestItem.photos.length > 0) {
-      return `${manifestItem.folder}/${manifestItem.photos[0].file}`;
+    // 2. Local manifest thumbnail
+    if (state.photoManifest && state.photoManifest[folderKey] && state.photoManifest[folderKey].photos && state.photoManifest[folderKey].photos[0]) {
+      const mf = state.photoManifest[folderKey];
+      return `${mf.folder}/${mf.photos[0].file}`;
     }
 
-    // 3. Default path
-    return `EventPhotos/${folderKey}/photo1.jpg`;
+    // Default logo placeholder when no drive photo is in the subfolder
+    return 'assets/logo_2.png';
   }
 
   // ==========================================================================
@@ -767,6 +819,7 @@
             alt="${escapeHTML(eventTitle)}" 
             class="card-media-img"
             loading="lazy"
+            referrerpolicy="no-referrer"
             onerror="this.onerror=null; this.src='assets/logo_1.png';"
           >
           <div class="card-overlay"></div>
@@ -983,14 +1036,30 @@
       card.className = 'photo-card';
       card.dataset.index = idx;
 
+      const fallbackList = photo.fallbackUrls && photo.fallbackUrls.length > 0
+        ? photo.fallbackUrls
+        : [photo.thumbnailUrl, photo.url].filter(Boolean);
+
+      const initialSrc = photo.thumbnailUrl || photo.url || (fallbackList.length > 0 ? fallbackList[0] : '');
+
       card.innerHTML = `
-        <img 
-          src="${photo.thumbnailUrl || photo.url}" 
-          alt="${escapeHTML(photo.title)}" 
-          class="photo-thumb"
-          loading="lazy"
-          onerror="this.onerror=null; this.parentElement.style.display='none';"
-        >
+        <div class="photo-img-wrapper">
+          <div class="photo-skeleton-shimmer"></div>
+          <img 
+            src="${initialSrc}" 
+            alt="${escapeHTML(photo.title)}" 
+            class="photo-thumb"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          >
+          <div class="photo-error-fallback hidden">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span class="photo-error-title">${escapeHTML(photo.title)}</span>
+            ${photo.driveUrl ? `<a href="${photo.driveUrl}" target="_blank" rel="noopener noreferrer" class="drive-link-chip" onclick="event.stopPropagation();">Open in Drive</a>` : ''}
+          </div>
+        </div>
         <div class="photo-info-overlay">
           <h4 class="photo-title-text">${escapeHTML(photo.title)}</h4>
           <span class="photo-click-hint">
@@ -1001,6 +1070,29 @@
           </span>
         </div>
       `;
+
+      const imgEl = card.querySelector('.photo-thumb');
+      const skeletonEl = card.querySelector('.photo-skeleton-shimmer');
+      const errorFallbackEl = card.querySelector('.photo-error-fallback');
+
+      let fallbackIndex = 0;
+
+      imgEl.onload = () => {
+        if (skeletonEl) skeletonEl.style.display = 'none';
+        imgEl.style.opacity = '1';
+      };
+
+      imgEl.onerror = () => {
+        fallbackIndex++;
+        if (fallbackIndex < fallbackList.length) {
+          imgEl.src = fallbackList[fallbackIndex];
+        } else {
+          // All fallback URLs exhausted -> show clean card fallback without hiding parent
+          if (skeletonEl) skeletonEl.style.display = 'none';
+          imgEl.style.display = 'none';
+          if (errorFallbackEl) errorFallbackEl.classList.remove('hidden');
+        }
+      };
 
       card.addEventListener('click', () => openLightbox(idx));
       elements.galleryGrid.appendChild(card);
@@ -1040,11 +1132,25 @@
     const photo = state.currentDetailPhotos[state.lightboxIndex];
     if (!photo) return;
 
-    elements.lightboxImg.src = photo.url;
+    const fallbackList = photo.fallbackUrls && photo.fallbackUrls.length > 0
+      ? photo.fallbackUrls
+      : [photo.url, photo.thumbnailUrl].filter(Boolean);
+
+    let fallbackIdx = 0;
+    elements.lightboxImg.referrerPolicy = 'no-referrer';
+    elements.lightboxImg.src = fallbackList[0] || photo.url;
+
+    elements.lightboxImg.onerror = () => {
+      fallbackIdx++;
+      if (fallbackIdx < fallbackList.length) {
+        elements.lightboxImg.src = fallbackList[fallbackIdx];
+      }
+    };
+
     elements.lightboxTitle.textContent = photo.title || 'Event Photograph';
     elements.lightboxCounter.textContent = `${state.lightboxIndex + 1} / ${state.currentDetailPhotos.length}`;
     elements.lightboxCaption.textContent = photo.caption || '';
-    elements.lightboxDownloadBtn.setAttribute('data-href', photo.url);
+    elements.lightboxDownloadBtn.setAttribute('data-href', photo.url || fallbackList[0]);
 
     // Direct Google Drive link if available
     if (photo.driveUrl) {
@@ -1073,9 +1179,9 @@
   // ==========================================================================
 
   function openDriveModal() {
-    elements.appsScriptInput.value = state.appsScriptUrl || localStorage.getItem(STORAGE_KEY_SCRIPT_URL) || '';
+    elements.appsScriptInput.value = state.appsScriptUrl || localStorage.getItem(STORAGE_KEY_SCRIPT_URL) || DEFAULT_APPS_SCRIPT_URL || '';
     if (elements.driveFolderIdInput) {
-      elements.driveFolderIdInput.value = state.driveFolderId || localStorage.getItem(STORAGE_KEY_FOLDER_ID) || '';
+      elements.driveFolderIdInput.value = state.driveFolderId || localStorage.getItem(STORAGE_KEY_FOLDER_ID) || DEFAULT_DRIVE_FOLDER_ID || '';
     }
     elements.driveModal.classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -1090,8 +1196,9 @@
     const inputUrl = elements.appsScriptInput.value.trim();
     const folderOverride = elements.driveFolderIdInput ? elements.driveFolderIdInput.value.trim() : '';
 
-    state.appsScriptUrl = inputUrl;
-    state.driveFolderId = folderOverride;
+    const cleanId = cleanFolderId(folderOverride);
+    state.appsScriptUrl = inputUrl || DEFAULT_APPS_SCRIPT_URL;
+    state.driveFolderId = cleanId || DEFAULT_DRIVE_FOLDER_ID;
     
     if (inputUrl) {
       localStorage.setItem(STORAGE_KEY_SCRIPT_URL, inputUrl);
@@ -1099,8 +1206,8 @@
       localStorage.removeItem(STORAGE_KEY_SCRIPT_URL);
     }
 
-    if (folderOverride) {
-      localStorage.setItem(STORAGE_KEY_FOLDER_ID, folderOverride);
+    if (cleanId) {
+      localStorage.setItem(STORAGE_KEY_FOLDER_ID, cleanId);
     } else {
       localStorage.removeItem(STORAGE_KEY_FOLDER_ID);
     }
@@ -1115,27 +1222,30 @@
       elements.diagnosticOutput.innerHTML = `<div class="diagnostic-item">Connecting to Google Apps Script Web App...</div>`;
     }
 
-    if (!inputUrl) {
+    const testTargetUrl = inputUrl || DEFAULT_APPS_SCRIPT_URL;
+    const testFolderId = cleanId || DEFAULT_DRIVE_FOLDER_ID;
+
+    if (!testTargetUrl) {
       if (elements.driveDiagnosticBox) {
         elements.diagnosticBadge.textContent = 'OFFLINE';
         elements.diagnosticBadge.className = 'diagnostic-badge';
         elements.diagnosticOutput.innerHTML = `
-          <div class="diagnostic-item" style="color:#FBBF24;">Web App URL is empty. The application will use local photo assets (EventPhotos/manifest.json).</div>
+          <div class="diagnostic-item" style="color:#FBBF24;">Web App URL is empty. Please enter your Google Apps Script Web App URL.</div>
         `;
       }
-      updateDriveStatusUI(false, 'Local Fallback');
-      showToast('Cleared Drive URL. Using local manifest.', 'info');
+      updateDriveStatusUI(false, 'Drive Sync Offline');
+      showToast('Please provide a valid Google Apps Script Web App URL.', 'info');
       return;
     }
 
     try {
       // 1. Run diagnostic call to Apps Script
-      let testUrl = inputUrl.includes('?') 
-        ? `${inputUrl}&action=debug`
-        : `${inputUrl}?action=debug`;
+      let testUrl = testTargetUrl.includes('?') 
+        ? `${testTargetUrl}&action=debug`
+        : `${testTargetUrl}?action=debug`;
       
-      if (folderOverride) {
-        testUrl += `&folderId=${encodeURIComponent(folderOverride)}`;
+      if (testFolderId) {
+        testUrl += `&folderId=${encodeURIComponent(testFolderId)}`;
       }
 
       const diagResp = await fetch(testUrl, { method: 'GET', mode: 'cors' });
@@ -1213,15 +1323,15 @@
   }
 
   function resetDriveSettings() {
-    elements.appsScriptInput.value = '';
-    if (elements.driveFolderIdInput) elements.driveFolderIdInput.value = '';
-    state.appsScriptUrl = '';
-    state.driveFolderId = '';
+    elements.appsScriptInput.value = DEFAULT_APPS_SCRIPT_URL;
+    if (elements.driveFolderIdInput) elements.driveFolderIdInput.value = DEFAULT_DRIVE_FOLDER_ID;
+    state.appsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
+    state.driveFolderId = DEFAULT_DRIVE_FOLDER_ID;
     localStorage.removeItem(STORAGE_KEY_SCRIPT_URL);
     localStorage.removeItem(STORAGE_KEY_FOLDER_ID);
     if (elements.driveDiagnosticBox) elements.driveDiagnosticBox.classList.add('hidden');
     syncGoogleDrivePhotos();
-    showToast('Reset to default local manifest.', 'info');
+    showToast('Reset to default Google Drive configuration.', 'info');
   }
 
   // ==========================================================================
